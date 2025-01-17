@@ -24,8 +24,13 @@ app.get('/', (req, res) => {
   res.send('Task Management API is running');
 });
 
+// API routes
+import authRoutes from './routes/authRoutes';
+app.use('/api/auth', authRoutes);
+
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(Server running on port );
 });
+
