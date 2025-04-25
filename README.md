@@ -1,4 +1,4 @@
-﻿# TaskFlow - Gestión de Tareas Colaborativa
+﻿# TaskFlow - Sistema de Gestión de Tareas con Panel de Administración y Control de Roles
 
 ![TaskFlow](https://via.placeholder.com/800x400.png?text=TaskFlow+Application)
 
