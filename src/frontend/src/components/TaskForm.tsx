@@ -106,12 +106,12 @@ const TaskForm: React.FC<TaskFormProps> = ({ taskId, isEditMode = false }) => {
     <div className="bg-white shadow sm:rounded-lg p-6">
       <div className="px-4 sm:px-0 mb-6">
         <h1 className="text-lg font-medium leading-6 text-gray-900">
-          {isEditMode ? 'Edit Task' : 'Create New Task'}
+          {isEditMode ? 'Editar información' : 'Información detallada'}
         </h1>
         <p className="mt-1 text-sm text-gray-600">
           {isEditMode
-            ? 'Update the details of your task.'
-            : 'Fill in the information below to create a new task.'}
+            ? 'Actualiza los detalles de esta actividad.'
+            : 'Completa la información para crear una nueva actividad.'}
         </p>
       </div>
 
@@ -134,18 +134,18 @@ const TaskForm: React.FC<TaskFormProps> = ({ taskId, isEditMode = false }) => {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div>
           <label htmlFor="title" className="form-label">
-            Title <span className="text-red-500">*</span>
+            Título <span className="text-red-500">*</span>
           </label>
           <input
             id="title"
             type="text"
             className="form-input"
-            placeholder="Task title"
+            placeholder="Título de la actividad"
             {...register('title', {
-              required: 'Title is required',
+              required: 'El título es obligatorio',
               minLength: {
                 value: 2,
-                message: 'Title must be at least 2 characters',
+                message: 'El título debe tener al menos 2 caracteres',
               },
             })}
           />
@@ -154,18 +154,18 @@ const TaskForm: React.FC<TaskFormProps> = ({ taskId, isEditMode = false }) => {
 
         <div>
           <label htmlFor="description" className="form-label">
-            Description <span className="text-red-500">*</span>
+            Descripción <span className="text-red-500">*</span>
           </label>
           <textarea
             id="description"
             rows={4}
             className="form-input"
-            placeholder="Task description"
+            placeholder="Descripción detallada"
             {...register('description', {
-              required: 'Description is required',
+              required: 'La descripción es obligatoria',
               minLength: {
                 value: 5,
-                message: 'Description must be at least 5 characters',
+                message: 'La descripción debe tener al menos 5 caracteres',
               },
             })}
           />
@@ -174,32 +174,32 @@ const TaskForm: React.FC<TaskFormProps> = ({ taskId, isEditMode = false }) => {
 
         <div>
           <label htmlFor="status" className="form-label">
-            Status <span className="text-red-500">*</span>
+            Estado <span className="text-red-500">*</span>
           </label>
           <select
             id="status"
             className="form-input"
             {...register('status', {
-              required: 'Status is required',
+              required: 'El estado es obligatorio',
             })}
           >
-            <option value="pending">Pending</option>
-            <option value="in-progress">In Progress</option>
-            <option value="completed">Completed</option>
+            <option value="pending">Pendiente</option>
+            <option value="in-progress">En progreso</option>
+            <option value="completed">Completada</option>
           </select>
           {errors.status && <p className="form-error">{errors.status.message}</p>}
         </div>
 
         <div>
           <label htmlFor="assignedTo" className="form-label">
-            Assign To (Optional)
+            Asignar a (Opcional)
           </label>
           <select
             id="assignedTo"
             className="form-input"
             {...register('assignedTo')}
           >
-            <option value="">No assignment</option>
+            <option value="">Sin asignación</option>
             {/* This should be populated with users from the backend */}
             <option value="user-id-1">John Doe</option>
             <option value="user-id-2">Jane Smith</option>
@@ -208,13 +208,13 @@ const TaskForm: React.FC<TaskFormProps> = ({ taskId, isEditMode = false }) => {
 
         <div>
           <label htmlFor="tags" className="form-label">
-            Tags (Optional, comma-separated)
+            Etiquetas (Opcional, separadas por comas)
           </label>
           <input
             id="tags"
             type="text"
             className="form-input"
-            placeholder="feature, bug, urgent"
+            placeholder="feature, bug, urgente"
             {...register('tags')}
             value={tagInput}
             onChange={(e) => {
@@ -223,7 +223,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ taskId, isEditMode = false }) => {
             }}
           />
           <p className="mt-1 text-xs text-gray-500">
-            Enter tags separated by commas, e.g., "feature, bug, urgent"
+            Introduce etiquetas separadas por comas, ej: "feature, bug, urgente"
           </p>
         </div>
 
@@ -239,10 +239,10 @@ const TaskForm: React.FC<TaskFormProps> = ({ taskId, isEditMode = false }) => {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Processing...
+                Procesando...
               </>
             ) : (
-              <>{isEditMode ? 'Update Task' : 'Create Task'}</>
+              <>{isEditMode ? 'Actualizar' : 'Crear'}</>
             )}
           </button>
           
@@ -251,7 +251,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ taskId, isEditMode = false }) => {
             className="btn btn-secondary"
             onClick={() => router.back()}
           >
-            Cancel
+            Cancelar
           </button>
         </div>
       </form>

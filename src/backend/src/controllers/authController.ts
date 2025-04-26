@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import User from '../models/User';
 import { AuthRequest } from '../middlewares/auth';
+import { SignOptions } from 'jsonwebtoken';
 
 // ValidaciÃ³n de registro
 const registerSchema = z.object({
@@ -36,12 +37,14 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     
     // Generar JWT
     const JWT_SECRET = process.env.JWT_SECRET || 'default_secret_key';
-    const JWT_EXPIRATION = process.env.JWT_EXPIRATION || '24h';
     
     const token = jwt.sign(
-      { userId: user.id },
+      { 
+        userId: user.id,
+        role: user.role
+      },
       JWT_SECRET,
-      { expiresIn: JWT_EXPIRATION }
+      { expiresIn: '24h' }
     );
     
     // Responder con usuario y token
@@ -49,7 +52,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       user: {
         id: user.id,
         name: user.name,
-        email: user.email
+        email: user.email,
+        role: user.role
       },
       token
     });
@@ -85,12 +89,14 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     
     // Generar JWT
     const JWT_SECRET = process.env.JWT_SECRET || 'default_secret_key';
-    const JWT_EXPIRATION = process.env.JWT_EXPIRATION || '24h';
     
     const token = jwt.sign(
-      { userId: user.id },
+      { 
+        userId: user.id,
+        role: user.role
+      },
       JWT_SECRET,
-      { expiresIn: JWT_EXPIRATION }
+      { expiresIn: '24h' }
     );
     
     // Responder con usuario y token
@@ -98,7 +104,9 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       user: {
         id: user.id,
         name: user.name,
-        email: user.email
+        email: user.email,
+        role: user.role,
+        forcePasswordChange: user.forcePasswordChange || false
       },
       token
     });
@@ -116,14 +124,30 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 export const getProfile = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user?.userId;
+    console.log("getProfile: ID de usuario en la solicitud:", userId);
     
     const user = await User.findById(userId).select('-password');
     if (!user) {
+      console.log("getProfile: Usuario no encontrado en BD");
       res.status(404).json({ message: 'Usuario no encontrado' });
       return;
     }
     
-    res.status(200).json({ user });
+    console.log("getProfile: Usuario encontrado en BD:", {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role
+    });
+    
+    res.status(200).json({ 
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      } 
+    });
   } catch (error) {
     console.error('Get profile error:', error);
     res.status(500).json({ message: 'Error en el servidor' });

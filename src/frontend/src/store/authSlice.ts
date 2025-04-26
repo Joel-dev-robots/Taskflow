@@ -6,6 +6,7 @@ interface User {
   id: string;
   name: string;
   email: string;
+  role?: string;
 }
 
 interface AuthState {
@@ -79,18 +80,22 @@ export const loadUser = createAsyncThunk<User>(
       const token = localStorage.getItem('token');
       
       if (!token) {
+        console.log('loadUser: No hay token en localStorage');
         throw new Error('No token found');
       }
       
+      console.log('loadUser: Intentando cargar perfil de usuario con token');
       const response = await axios.get(`${API_URL}/auth/profile`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
       
+      console.log('loadUser: Respuesta del servidor:', response.data);
       return response.data.user;
     } catch (error: any) {
       // Remove invalid token
+      console.error('loadUser: Error al cargar usuario:', error);
       localStorage.removeItem('token');
       
       return rejectWithValue(

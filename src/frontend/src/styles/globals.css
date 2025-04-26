@@ -2,6 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Establecer cursor por defecto para todos los elementos */
+* {
+  cursor: default;
+}
+
+/* Prevenir selección de texto en elementos que no son entradas */
+p, h1, h2, h3, h4, h5, h6, span, div:not(input, textarea) {
+  user-select: none;
+}
+
+/* Permitir cursor pointer solo para elementos interactivos */
+a, button, select, input[type="checkbox"], input[type="radio"], .cursor-pointer {
+  cursor: pointer;
+}
+
+/* Permitir selección de texto en áreas de entrada y código */
+input, textarea, pre, code, [contenteditable="true"] {
+  user-select: text;
+  cursor: text;
+}
+
 @layer components {
   .btn {
     @apply px-4 py-2 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-offset-2;

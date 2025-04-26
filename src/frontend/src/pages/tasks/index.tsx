@@ -12,12 +12,12 @@ const TasksPage = () => {
       <Layout>
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900">Tasks</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Gestión de tareas</h1>
             <button
               onClick={() => router.push('/tasks/new')}
               className="btn btn-primary"
             >
-              Create New Task
+              Crear nueva tarea
             </button>
           </div>
           

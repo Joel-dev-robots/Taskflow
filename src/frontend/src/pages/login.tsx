@@ -54,7 +54,7 @@ const LoginPage: React.FC = () => {
   return (
     <Layout>
       <div className="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md">
-        <h1 className="text-2xl font-bold text-center mb-6">Login to your account</h1>
+        <h1 className="text-2xl font-bold text-center mb-6">Iniciar sesión</h1>
 
         {/* Error alert */}
         {showError && (
@@ -84,17 +84,17 @@ const LoginPage: React.FC = () => {
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="mb-4">
             <label htmlFor="email" className="form-label">
-              Email address
+              Correo electrónico
             </label>
             <input
               id="email"
               type="email"
               className="form-input"
               {...register('email', {
-                required: 'Email is required',
+                required: 'El correo electrónico es requerido',
                 pattern: {
                   value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                  message: 'Invalid email address',
+                  message: 'Dirección de correo inválida',
                 },
               })}
             />
@@ -103,14 +103,14 @@ const LoginPage: React.FC = () => {
 
           <div className="mb-6">
             <label htmlFor="password" className="form-label">
-              Password
+              Contraseña
             </label>
             <input
               id="password"
               type="password"
               className="form-input"
               {...register('password', {
-                required: 'Password is required',
+                required: 'La contraseña es requerida',
               })}
             />
             {errors.password && <p className="form-error">{errors.password.message}</p>}
@@ -121,16 +121,16 @@ const LoginPage: React.FC = () => {
               <input
                 id="remember_me"
                 type="checkbox"
-                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded cursor-pointer"
               />
               <label htmlFor="remember_me" className="ml-2 block text-sm text-gray-700">
-                Remember me
+                Recordarme
               </label>
             </div>
 
             <div className="text-sm">
-              <Link href="/forgot-password" className="text-primary-600 hover:text-primary-500">
-                Forgot your password?
+              <Link href="/forgot-password" className="text-primary-600 hover:text-primary-500 cursor-pointer">
+                ¿Olvidaste tu contraseña?
               </Link>
             </div>
           </div>
@@ -138,7 +138,7 @@ const LoginPage: React.FC = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full btn btn-primary flex justify-center"
+            className="w-full btn btn-primary flex justify-center cursor-pointer"
           >
             {isLoading ? (
               <svg
@@ -162,15 +162,15 @@ const LoginPage: React.FC = () => {
                 ></path>
               </svg>
             ) : null}
-            Sign in
+            Iniciar sesión
           </button>
         </form>
 
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
-            Don't have an account?{' '}
-            <Link href="/register" className="text-primary-600 hover:text-primary-500">
-              Register here
+            ¿No tienes una cuenta?{' '}
+            <Link href="/register" className="text-primary-600 hover:text-primary-500 cursor-pointer">
+              Regístrate aquí
             </Link>
           </p>
         </div>
