@@ -4,6 +4,11 @@ on:
   push:
     branches: [ main, master ]
     
+# Agregar permisos explícitos para permitir acceso a ghcr.io
+permissions:
+  contents: read
+  packages: write
+    
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
