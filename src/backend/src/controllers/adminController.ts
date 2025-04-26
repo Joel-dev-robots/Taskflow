@@ -4,11 +4,16 @@ import bcrypt from 'bcrypt';
 import User from '../models/User';
 import { AuthRequest } from '../middlewares/auth';
 import crypto from 'crypto';
+import { emitPasswordResetRequest } from '../index';
 
 // Validación para restablecimiento de contraseña
 const resetPasswordSchema = z.object({
-  userId: z.string().nonempty('ID de usuario es requerido'),
-  newPassword: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
+  userId: z.string().optional(),
+  newPassword: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres').optional(),
+  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres').optional(),
+}).refine(data => data.password || data.newPassword, {
+  message: "Se requiere una contraseña (password o newPassword)",
+  path: ["password"]
 });
 
 /**
@@ -51,9 +56,32 @@ export const getUserDetails = async (req: AuthRequest, res: Response): Promise<v
  */
 export const resetUserPassword = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    console.log('Body recibido:', JSON.stringify(req.body));
+    console.log('Params recibidos:', JSON.stringify(req.params));
+    
     // Validar datos de entrada
     const validatedData = resetPasswordSchema.parse(req.body);
-    const { userId, newPassword } = validatedData;
+    console.log('Datos validados:', JSON.stringify(validatedData));
+    
+    // Obtener userId de los parámetros de la URL (para PUT request) o del cuerpo (para POST request)
+    let userId = req.params.userId || validatedData.userId;
+    
+    console.log('UserID extraído:', userId);
+    
+    if (!userId) {
+      res.status(400).json({ message: 'ID de usuario es requerido' });
+      return;
+    }
+    
+    // Obtener la nueva contraseña del cuerpo 
+    const newPassword = validatedData.password || validatedData.newPassword;
+    
+    console.log('¿Password recibido?', !!newPassword);
+    
+    if (!newPassword) {
+      res.status(400).json({ message: 'La nueva contraseña es requerida' });
+      return;
+    }
     
     // Buscar al usuario
     const user = await User.findById(userId);
@@ -62,15 +90,14 @@ export const resetUserPassword = async (req: AuthRequest, res: Response): Promis
       return;
     }
     
-    // Generar salt y hash de la nueva contraseña
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(newPassword, salt);
-    
-    // Actualizar la contraseña
-    user.password = hashedPassword;
+    // Establecer la nueva contraseña directamente (se hasheará automáticamente en el pre-save hook)
+    user.password = newPassword;
     
     // Forzar cambio de contraseña en siguiente inicio de sesión
     user.forcePasswordChange = true;
+    
+    // Limpiar la solicitud de restablecimiento si existía
+    user.passwordResetRequested = false;
     
     await user.save();
     
@@ -85,6 +112,7 @@ export const resetUserPassword = async (req: AuthRequest, res: Response): Promis
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
+      console.error('ZodError:', JSON.stringify(error.errors));
       res.status(400).json({ message: 'Error de validación', errors: error.errors });
     } else {
       console.error('Error al restablecer contraseña:', error);
@@ -114,16 +142,22 @@ export const sendPasswordResetEmail = async (req: AuthRequest, res: Response): P
     // Almacenar el token en la base de datos con tiempo de expiración
     user.resetPasswordToken = resetToken;
     user.resetPasswordExpires = new Date(Date.now() + 3600000); // 1 hora
+    user.passwordResetRequested = true; // Marcar como pendiente de reset
     await user.save();
     
     // Construir URL para reset
     const resetUrl = `${req.protocol}://${req.get('host')}/reset-password/${resetToken}`;
     
-    // En un sistema real, enviar el correo con el enlace
+    // Emitir notificación por socket.io a los administradores
+    emitPasswordResetRequest({
+      id: user._id.toString(),
+      name: user.name,
+      email: user.email
+    });
     
     // Responder con éxito
     res.status(200).json({ 
-      message: `Enlace de restablecimiento enviado a ${user.email}`,
+      message: `Solicitud de restablecimiento registrada para ${user.email}`,
       emailSent: process.env.NODE_ENV === 'production' 
         ? true 
         : 'Simulado en entorno de desarrollo',

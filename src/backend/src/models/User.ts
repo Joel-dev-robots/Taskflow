@@ -9,6 +9,7 @@ export interface IUser extends Document {
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
   forcePasswordChange?: boolean;
+  passwordResetRequested?: boolean;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -46,6 +47,10 @@ const UserSchema = new Schema(
       default: null
     },
     forcePasswordChange: {
+      type: Boolean,
+      default: false
+    },
+    passwordResetRequested: {
       type: Boolean,
       default: false
     }

@@ -23,5 +23,6 @@ router.put('/users/:userId/role', updateUserRole);
 // Rutas para gestión de contraseñas
 router.post('/users/:userId/reset-password-email', sendPasswordResetEmail);
 router.post('/users/reset-password', resetUserPassword);
+router.put('/users/:userId/password', resetUserPassword);
 
 export default router; 

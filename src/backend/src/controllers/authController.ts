@@ -5,17 +5,23 @@ import User from '../models/User';
 import { AuthRequest } from '../middlewares/auth';
 import { SignOptions } from 'jsonwebtoken';
 
-// ValidaciÃ³n de registro
+// Validación de registro
 const registerSchema = z.object({
   name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
-  email: z.string().email('Email invÃ¡lido'),
-  password: z.string().min(6, 'La contraseÃ±a debe tener al menos 6 caracteres')
+  email: z.string().email('Email inválido'),
+  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres')
 });
 
-// ValidaciÃ³n de login
+// Validación de login
 const loginSchema = z.object({
-  email: z.string().email('Email invÃ¡lido'),
-  password: z.string().min(6, 'La contraseÃ±a debe tener al menos 6 caracteres')
+  email: z.string().email('Email inválido'),
+  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres')
+});
+
+// Validación para cambio de contraseña
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'La contraseña actual es requerida'),
+  newPassword: z.string().min(6, 'La nueva contraseña debe tener al menos 6 caracteres')
 });
 
 // Registrar usuario
@@ -59,7 +65,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      res.status(400).json({ message: 'Validation error', errors: error.errors });
+      res.status(400).json({ message: 'Error de validación', errors: error.errors });
     } else {
       console.error('Register error:', error);
       res.status(500).json({ message: 'Error en el servidor' });
@@ -76,14 +82,14 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     // Buscar usuario por email
     const user = await User.findOne({ email: validatedData.email });
     if (!user) {
-      res.status(400).json({ message: 'Credenciales invÃ¡lidas' });
+      res.status(400).json({ message: 'Credenciales inválidas' });
       return;
     }
     
-    // Verificar contraseÃ±a
+    // Verificar contraseña
     const isMatch = await user.comparePassword(validatedData.password);
     if (!isMatch) {
-      res.status(400).json({ message: 'Credenciales invÃ¡lidas' });
+      res.status(400).json({ message: 'Credenciales inválidas' });
       return;
     }
     
@@ -112,7 +118,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      res.status(400).json({ message: 'Validation error', errors: error.errors });
+      res.status(400).json({ message: 'Error de validación', errors: error.errors });
     } else {
       console.error('Login error:', error);
       res.status(500).json({ message: 'Error en el servidor' });
@@ -151,5 +157,73 @@ export const getProfile = async (req: AuthRequest, res: Response): Promise<void>
   } catch (error) {
     console.error('Get profile error:', error);
     res.status(500).json({ message: 'Error en el servidor' });
+  }
+};
+
+/**
+ * Permite a un usuario cambiar su propia contraseña
+ */
+export const changePassword = async (req: AuthRequest, res: Response): Promise<void> => {
+  console.log('changePassword: Función llamada');
+  
+  try {
+    // Verificar autenticación
+    if (!req.user || !req.user.userId) {
+      console.log('changePassword: Usuario no autenticado');
+      res.status(401).json({ message: 'Usuario no autenticado' });
+      return;
+    }
+    
+    const userId = req.user.userId;
+    console.log('changePassword: userId =', userId);
+    
+    // Validar datos
+    try {
+      const { currentPassword, newPassword } = changePasswordSchema.parse(req.body);
+      console.log('changePassword: Datos validados correctamente');
+      
+      // Buscar usuario
+      const user = await User.findById(userId);
+      if (!user) {
+        console.log('changePassword: Usuario no encontrado con ID', userId);
+        res.status(404).json({ message: 'Usuario no encontrado' });
+        return;
+      }
+      
+      // Verificar contraseña actual
+      const isMatch = await user.comparePassword(currentPassword);
+      if (!isMatch) {
+        console.log('changePassword: Contraseña actual incorrecta');
+        res.status(400).json({ message: 'Contraseña actual incorrecta' });
+        return;
+      }
+      
+      // Actualizar contraseña
+      user.password = newPassword;
+      
+      // Desactivar el forzado de cambio si estaba activo
+      if (user.forcePasswordChange) {
+        user.forcePasswordChange = false;
+      }
+      
+      await user.save();
+      console.log('changePassword: Contraseña actualizada con éxito para usuario', user.email);
+      
+      res.status(200).json({ message: 'Contraseña actualizada con éxito' });
+      
+    } catch (validationError) {
+      if (validationError instanceof z.ZodError) {
+        console.log('changePassword: Error de validación', validationError.errors);
+        res.status(400).json({ 
+          message: 'Error de validación', 
+          errors: validationError.errors 
+        });
+      } else {
+        throw validationError;
+      }
+    }
+  } catch (error) {
+    console.error('changePassword: Error inesperado', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
   }
 };

@@ -43,6 +43,18 @@ io.on('connection', (socket) => {
     console.log(`User ${socket.id} left room: task-${taskId}`);
   });
 
+  // Join admin room
+  socket.on('join-admin', () => {
+    socket.join('admin-room');
+    console.log(`User ${socket.id} joined admin room`);
+  });
+
+  // Leave admin room
+  socket.on('leave-admin', () => {
+    socket.leave('admin-room');
+    console.log(`User ${socket.id} left admin room`);
+  });
+
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
   });
@@ -51,6 +63,16 @@ io.on('connection', (socket) => {
 // Function to emit task updates
 export const emitTaskUpdate = (taskId: string, event: string, data: any) => {
   io.to(`task-${taskId}`).emit(event, data);
+};
+
+// Function to emit password reset notifications to admins
+export const emitPasswordResetRequest = (user: { id: string, name: string, email: string }) => {
+  io.to('admin-room').emit('password-reset-request', {
+    userId: user.id,
+    userName: user.name,
+    userEmail: user.email,
+    timestamp: new Date()
+  });
 };
 
 // Middleware

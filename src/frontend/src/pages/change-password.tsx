@@ -3,6 +3,10 @@ import { useRouter } from 'next/router';
 import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import Layout from '../components/Layout';
+import axios from 'axios';
+
+// Definir la URL de la API
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 // Definir una interfaz temporal para el estado de autenticación
 interface AuthState {
@@ -14,6 +18,7 @@ interface AuthState {
     forcePasswordChange?: boolean;
   } | null;
   isAuthenticated: boolean;
+  token: string | null;
 }
 
 interface RootState {
@@ -29,7 +34,7 @@ interface ChangePasswordInputs {
 const ChangePasswordPage: React.FC = () => {
   const router = useRouter();
   const dispatch = useDispatch();
-  const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const { user, isAuthenticated, token } = useSelector((state: RootState) => state.auth);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -58,11 +63,14 @@ const ChangePasswordPage: React.FC = () => {
     setErrorMessage('');
     setSuccessMessage('');
     
+    console.log('Iniciando cambio de contraseña...');
+    
     try {
-      // Esta función cambiaría la contraseña en el backend
-      // Por ahora es un simulador
-      await simulatePasswordChange(data);
+      console.log('Llamando a la API para cambiar contraseña...');
+      // Llamar a la API para cambiar la contraseña
+      await changePassword(data);
       
+      console.log('Contraseña cambiada con éxito!');
       setSuccessMessage('Contraseña actualizada correctamente');
       
       // Redirigir después de un breve tiempo
@@ -70,27 +78,65 @@ const ChangePasswordPage: React.FC = () => {
         router.push('/dashboard');
       }, 2000);
     } catch (error: any) {
-      setErrorMessage(error.message || 'Error al cambiar la contraseña');
+      console.error('Error al cambiar contraseña:', error);
+      
+      if (error.response) {
+        console.error('Datos de respuesta de error:', error.response.data);
+        console.error('Estado de respuesta de error:', error.response.status);
+        
+        if (error.response.data && error.response.data.message) {
+          setErrorMessage(error.response.data.message);
+        } else {
+          setErrorMessage('Error en la respuesta del servidor');
+        }
+      } else if (error.request) {
+        console.error('No se recibió respuesta del servidor');
+        setErrorMessage('No se pudo conectar con el servidor');
+      } else {
+        console.error('Error de configuración de la solicitud:', error.message);
+        setErrorMessage(error.message || 'Error al cambiar la contraseña');
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
   
-  // Simulador de cambio de contraseña (en producción, llamaría a una API real)
-  const simulatePasswordChange = async (data: ChangePasswordInputs): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        // Simulación básica de validación
-        if (data.currentPassword === 'wrongpassword') {
-          reject(new Error('La contraseña actual es incorrecta'));
-        } else {
-          // En un entorno real, llamaríamos a la API para cambiar la contraseña
-          console.log('Contraseña cambiada con éxito (simulado)');
-          localStorage.removeItem('forcePasswordChange');
-          resolve();
-        }
-      }, 1000);
+  // Función para hacer el cambio de contraseña a través de la API
+  const changePassword = async (data: ChangePasswordInputs): Promise<void> => {
+    console.log('Token disponible:', !!token);
+    
+    if (!token) {
+      throw new Error('No hay token de autenticación');
+    }
+    
+    console.log('URL de la API:', `${API_URL}/auth/change-password`);
+    console.log('Datos enviados:', { 
+      currentPassword: '******', 
+      newPassword: '******' 
     });
+    
+    try {
+      const response = await axios.put(
+        `${API_URL}/auth/change-password`,
+        {
+          currentPassword: data.currentPassword,
+          newPassword: data.newPassword
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+      
+      console.log('Respuesta del servidor:', response.status);
+      console.log('Datos de respuesta:', response.data);
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error en la petición axios:', error);
+      throw error;
+    }
   };
   
   return (

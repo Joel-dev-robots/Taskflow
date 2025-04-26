@@ -6,6 +6,7 @@ import adminService from '../../services/adminService';
 import { authService } from '../../services/authService';
 import { useAppSelector } from '../../store/hooks';
 import axios from 'axios';
+// import { io, Socket } from 'socket.io-client';
 
 interface User {
   id?: string;
@@ -13,6 +14,7 @@ interface User {
   name: string;
   email: string;
   role: string;
+  passwordResetRequested?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -21,6 +23,9 @@ interface User {
 const getUserId = (user: User): string => {
   return user._id || user.id || '';
 };
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+// const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000';
 
 const AdminPanel: React.FC = () => {
   const router = useRouter();
@@ -41,23 +46,69 @@ const AdminPanel: React.FC = () => {
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [passwordResetMessage, setPasswordResetMessage] = useState<string | null>(null);
   
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+  // Estado para notificaciones
+  // const [socket, setSocket] = useState<Socket | null>(null);
+  const [notification, setNotification] = useState<string | null>(null);
   
   // Verificar si el usuario es administrador al cargar la página
   useEffect(() => {
-    // Verificar si el usuario está autenticado y es administrador
-    const isAdmin = user?.role === 'admin';
-    console.log("Usuario actual:", user);
-    console.log("¿Es administrador?", isAdmin);
-    
-    if (!isAdmin) {
-      console.log("Redirigiendo a /login porque el usuario no es administrador");
-      router.push('/login');
-    } else {
-      console.log("Cargando usuarios para el panel de administración");
-      loadUsers();
+    if (user && user.role !== 'admin') {
+      router.push('/dashboard');
+    } else if (user) {
+      loadUsers(); // Load users if user is admin
     }
   }, [router, user]);
+  
+  /* Comentar el código de socket.io hasta que esté instalado
+  // Configurar Socket.io
+  useEffect(() => {
+    // Solo inicializar socket si no existe ya
+    if (!socket) {
+      const newSocket = io(SOCKET_URL);
+      setSocket(newSocket);
+      
+      // Unirse a la sala de admin
+      newSocket.emit('join-admin');
+      
+      return () => {
+        newSocket.emit('leave-admin');
+        newSocket.disconnect();
+      };
+    }
+    
+    return () => {};
+  }, []);
+  
+  // Escuchar eventos de Socket.io
+  useEffect(() => {
+    if (socket) {
+      // Escuchar solicitudes de restablecimiento de contraseña
+      socket.on('password-reset-request', (data) => {
+        const { userName, userEmail } = data;
+        setNotification(`${userName} (${userEmail}) ha solicitado restablecer su contraseña`);
+        
+        // Recargar la lista de usuarios para mostrar la nueva solicitud
+        loadUsers();
+        
+        // Mostrar notificación del navegador si está permitido
+        if (Notification.permission === 'granted') {
+          new Notification('Solicitud de restablecimiento de contraseña', {
+            body: `${userName} (${userEmail}) ha solicitado restablecer su contraseña`,
+            icon: '/favicon.ico'
+          });
+        }
+        
+        // Sonido de notificación (opcional)
+        const audio = new Audio('/notification.mp3');
+        audio.play().catch(err => console.log('No se pudo reproducir el sonido', err));
+      });
+      
+      return () => {
+        socket.off('password-reset-request');
+      };
+    }
+  }, [socket]);
+  */
   
   // Cargar la lista de usuarios
   const loadUsers = async () => {
@@ -280,6 +331,24 @@ const AdminPanel: React.FC = () => {
         <div className="max-w-6xl mx-auto px-4 py-8">
           <h1 className="text-3xl font-bold mb-6">Panel de Administración</h1>
           
+          {/* Contador de peticiones pendientes de reset */}
+          {users.filter(user => user.passwordResetRequested).length > 0 && (
+            <div className="mb-4 bg-yellow-50 border-l-4 border-yellow-400 p-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-yellow-700">
+                    <strong>Atención:</strong> Hay {users.filter(user => user.passwordResetRequested).length} solicitud(es) de restablecimiento de contraseña pendientes.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
           {/* Botón de prueba de conexión */}
           <div className="mb-6">
             <button 
@@ -335,9 +404,14 @@ const AdminPanel: React.FC = () => {
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
                         {users.map((user) => (
-                          <tr key={getUserId(user)}>
+                          <tr key={getUserId(user)} className={user.passwordResetRequested ? 'bg-yellow-50' : ''}>
                             <td className="px-6 py-4 whitespace-nowrap">
                               {user.name}
+                              {user.passwordResetRequested && (
+                                <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                  Reset solicitado
+                                </span>
+                              )}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               {user.email}
@@ -364,9 +438,13 @@ const AdminPanel: React.FC = () => {
                                   setPasswordUserId(getUserId(user));
                                   setNewPassword('');
                                 }}
-                                className="text-yellow-600 hover:text-yellow-900 mr-3"
+                                className={`${
+                                  user.passwordResetRequested 
+                                    ? 'text-red-600 hover:text-red-900 font-bold' 
+                                    : 'text-yellow-600 hover:text-yellow-900'
+                                } mr-3`}
                               >
-                                Restablecer contraseña
+                                {user.passwordResetRequested ? '⚠️ Reset' : 'Restablecer contraseña'}
                               </button>
                               <button
                                 onClick={() => handleSendResetEmail(getUserId(user))}

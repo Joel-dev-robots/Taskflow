@@ -1,14 +1,18 @@
 ﻿import { Router } from 'express';
-import { register, login, getProfile } from '../controllers/authController';
+import * as authController from '../controllers/authController';
 import { auth } from '../middlewares/auth';
+
+// Log to check if changePassword is correctly imported
+console.log('Auth controller methods:', Object.keys(authController));
 
 const router = Router();
 
-// Rutas pÃºblicas
-router.post('/register', register);
-router.post('/login', login);
+// Rutas públicas
+router.post('/register', authController.register);
+router.post('/login', authController.login);
 
 // Rutas protegidas
-router.get('/profile', auth, getProfile);
+router.get('/profile', auth, authController.getProfile);
+router.put('/change-password', auth, authController.changePassword);
 
 export default router;
